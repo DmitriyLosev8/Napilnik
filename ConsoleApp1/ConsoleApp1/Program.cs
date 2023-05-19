@@ -40,6 +40,5 @@ namespace Napilnik1
             _weapon.Fire(_player);
         }
     }
-
 }
 

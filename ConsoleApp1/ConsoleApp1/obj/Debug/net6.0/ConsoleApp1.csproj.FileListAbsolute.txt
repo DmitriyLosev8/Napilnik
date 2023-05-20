@@ -3,3 +3,13 @@ F:\GitHub\2DTourist\Napilnik\ConsoleApp1\ConsoleApp1\obj\Debug\net6.0\ConsoleApp
 F:\GitHub\2DTourist\Napilnik\ConsoleApp1\ConsoleApp1\obj\Debug\net6.0\ConsoleApp1.AssemblyInfoInputs.cache
 F:\GitHub\2DTourist\Napilnik\ConsoleApp1\ConsoleApp1\obj\Debug\net6.0\ConsoleApp1.AssemblyInfo.cs
 F:\GitHub\2DTourist\Napilnik\ConsoleApp1\ConsoleApp1\obj\Debug\net6.0\ConsoleApp1.csproj.CoreCompileInputs.cache
+F:\GitHub\2DTourist\Napilnik\ConsoleApp1\ConsoleApp1\bin\Debug\net6.0\ConsoleApp1.exe
+F:\GitHub\2DTourist\Napilnik\ConsoleApp1\ConsoleApp1\bin\Debug\net6.0\ConsoleApp1.deps.json
+F:\GitHub\2DTourist\Napilnik\ConsoleApp1\ConsoleApp1\bin\Debug\net6.0\ConsoleApp1.runtimeconfig.json
+F:\GitHub\2DTourist\Napilnik\ConsoleApp1\ConsoleApp1\bin\Debug\net6.0\ConsoleApp1.dll
+F:\GitHub\2DTourist\Napilnik\ConsoleApp1\ConsoleApp1\bin\Debug\net6.0\ConsoleApp1.pdb
+F:\GitHub\2DTourist\Napilnik\ConsoleApp1\ConsoleApp1\obj\Debug\net6.0\ConsoleApp1.dll
+F:\GitHub\2DTourist\Napilnik\ConsoleApp1\ConsoleApp1\obj\Debug\net6.0\refint\ConsoleApp1.dll
+F:\GitHub\2DTourist\Napilnik\ConsoleApp1\ConsoleApp1\obj\Debug\net6.0\ConsoleApp1.pdb
+F:\GitHub\2DTourist\Napilnik\ConsoleApp1\ConsoleApp1\obj\Debug\net6.0\ConsoleApp1.genruntimeconfig.cache
+F:\GitHub\2DTourist\Napilnik\ConsoleApp1\ConsoleApp1\obj\Debug\net6.0\ref\ConsoleApp1.dll

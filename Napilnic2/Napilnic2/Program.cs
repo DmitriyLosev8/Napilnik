@@ -6,132 +6,55 @@ namespace Napilnik1
     {
         static void Main(string[] args)
         {
-            Good iPhone12 = new Good("IPhone 12");
-            Good iPhone11 = new Good("IPhone 11");
+            //Выведите платёжные ссылки для трёх разных систем платежа: 
+            //pay.system1.ru/order?amount=12000RUB&hash={MD5 хеш ID заказа}
+            //order.system2.ru/pay?hash={MD5 хеш ID заказа + сумма заказа}
+            //system3.com/pay?amount=12000&curency=RUB&hash={SHA-1 хеш сумма заказа + ID заказа + секретный ключ от системы}
 
-            Warehouse warehouse = new Warehouse();
+            Order order = new Order(333, 10);
+            Mir mir = new Mir();
+            Visa visa = new Visa();
+            MasterCard mastercard = new MasterCard();
 
-            Shop shop = new Shop(warehouse);
-
-            warehouse.Delive(iPhone12, 10);
-            warehouse.Delive(iPhone11, 1);
-
-            //Вывод всех товаров на складе с их остатком
-            warehouse.ShowGoods();
-
-            Cart cart = shop.Cart();
-            cart.Add(iPhone12, 4);
-            cart.Add(iPhone11, 3); //при такой ситуации возникает ошибка так, как нет нужного количества товара на складе
-
-            //Вывод всех товаров в корзине
-            cart.ShowGoods();
-
-            Console.WriteLine(cart.Order().Paylink);
-
-            cart.Add(iPhone12, 9); //Ошибка, после заказа со склада убираются заказанные товары
+            Console.WriteLine(mir.GetPayingLink(order));
+            Console.WriteLine(visa.GetPayingLink(order));
+            Console.WriteLine(mastercard.GetPayingLink(order));
         }
+    }
 
-        class Good
-        {
-            public string Title { get; private set; }
+    public class Order
+    {
+        public readonly int Id;
+        public readonly int Amount;
 
-            public Good(string title)
-            {
-                Title = title;
-            }
-        }
+        public Order(int id, int amount) => (Id, Amount) = (id, amount);
+    }
 
-        class Warehouse
-        {
-            public Dictionary<Good, int> Goods { get; private set; }
+    public interface IPaymentSystem
+    {
+        public string Link { get; }
+        public string GetPayingLink(Order order);
+        
+    }
 
-            public Warehouse()
-            {
-                Goods = new Dictionary<Good, int>();
-            }
+    public class Mir : IPaymentSystem
+    {
+        public string Link => "pay.system1.ru/order?amount=12000RUB&hash={MD5 хеш ID заказа}";
 
-            public void Delive(Good good, int count)
-            {
-                if (count > 0 || good != null)
-                {
-                    if (Goods.ContainsKey(good))
-                        Goods[good] += count;
-                    else
-                        Goods.Add(good, count);
-                }
-            }
+        public string GetPayingLink(Order order) => $"ID заказа - {order.Id}, колличество - {order.Amount}, сслыка - {Link}";
+    }
 
-            public void RemoveGoods(Good good, int count)
-            {
-                if (Goods.ContainsKey(good))
-                {
-                    if (Goods[good] - count == 0)
-                        Goods.Remove(good);
-                    else
-                        Goods[good] -= count;
-                }
-                else
-                    throw new Exception();
-            }
+    public class Visa : IPaymentSystem
+    {
+        public string Link => "order.system2.ru/pay?hash={MD5 хеш ID заказа + сумма заказа}";
 
-            public void ShowGoods()
-            {
-                foreach (var good in Goods)
-                {
-                    Console.WriteLine($"{good.Key.Title} колличество - {good.Value}");
-                }
-            }
-        }
+        public string GetPayingLink(Order order) => $"ID заказа - {order.Id}, колличество - {order.Amount}, сслыка - {Link}";
+    }
 
-        class Shop
-        { 
-            public string Paylink = "Оплата";
+    public class MasterCard : IPaymentSystem
+    {
+        public string Link => "system3.com/pay?amount=12000&curency=RUB&hash={SHA-1 хеш сумма заказа + ID заказа + секретный ключ от системы}";
 
-            public Warehouse Warehouse { get; private set; }
-
-            public Shop(Warehouse warehouse)
-            {
-                Warehouse = warehouse;
-            }
-
-            public Cart Cart() => new Cart(this);
-        }
-
-        class Cart
-        {     
-            private Dictionary<Good, int> _goods;
-
-            public Shop Shop { get; private set; }
-
-            public Cart(Shop shop)
-            {
-                Shop = shop;
-                _goods = new Dictionary<Good, int>();
-            }
-
-            public Shop Order() => Shop;
-
-            public void ShowGoods()
-            {
-                foreach (var good in _goods)
-                    Console.WriteLine($"Товары в корзине: {good.Key.Title} колличество -  {good.Value}");
-            }
-
-            public void Add(Good good, int count)
-            {
-                if (Shop.Warehouse.Goods.ContainsKey(good))
-                {
-                    if (Shop.Warehouse.Goods[good] >= count)
-                    {
-                        Shop.Warehouse.RemoveGoods(good, count);
-                        _goods.Add(good, count);
-                    }
-                    else
-                        throw new ArgumentOutOfRangeException();
-                }
-                else
-                    throw new ArgumentOutOfRangeException();
-            }
-        }
-    }  
+        public string GetPayingLink(Order order) => $"ID заказа - {order.Id}, колличество - {order.Amount}, сслыка - {Link}";   
+    }
 }

@@ -7,89 +7,86 @@ namespace Napilnik1
     {
         static void Main(string[] args)
         {
-            Pathfinder variantOfLogger1 = new Pathfinder(1);
-            Pathfinder variantOfLogger2 = new Pathfinder(2);
-            Pathfinder variantOfLogger3 = new Pathfinder(3);
-            Pathfinder variantOfLogger4 = new Pathfinder(4);
-            Pathfinder variantOfLogger5 = new Pathfinder(5);
+            FileLogWritter fileLogWritter = new FileLogWritter();
+            ConsoleLogWritter consoleLogWritter = new ConsoleLogWritter();
+
+            Pathfinder pathfinder1 = new Pathfinder(fileLogWritter);
+            Pathfinder pathfinder2 = new Pathfinder(consoleLogWritter);
+            Pathfinder pathfinder3 = new Pathfinder(new SecureLogWritter(fileLogWritter));
+            Pathfinder pathfinder4 = new Pathfinder(new SecureLogWritter(consoleLogWritter));
+            Pathfinder pathfinder5 = new Pathfinder(new DifferentWaysLogWritter(consoleLogWritter, fileLogWritter));
         }
 
-        class Writer
+        class FileLogWritter : Ilogger
         {
-            public virtual void WriteError(string message) {}
-        }
-
-        class ConsoleLogWritter : Writer
-        {
-            public override void WriteError(string message)
-            {
-                Console.WriteLine(message);
-            }
-        }
-
-        class FileLogWritter : Writer
-        {
-            public override void WriteError(string message)
+            void Ilogger.WriteError(string message)
             {
                 File.WriteAllText("log.txt", message);
             }
         }
 
-        class SecureLogWritter 
-        { 
-            public void SecuredWrite(Writer writer, string message)
+        class ConsoleLogWritter : Ilogger
+        {
+            void Ilogger.WriteError(string message)
+            {
+                Console.WriteLine(message);
+            }
+        }
+
+        class SecureLogWritter : Ilogger
+        {
+            private Ilogger _logger;
+
+            public SecureLogWritter(Ilogger logger)
+            {
+                _logger = logger;
+            }
+
+            public void SecuredWrite(string message)
             {
                 if (DateTime.Now.DayOfWeek == DayOfWeek.Friday)
-                {
-                    writer.WriteError(message);
-                }
+                    _logger.WriteError(message);
             }
         }
 
-        class Pathfinder : Logger
+        class DifferentWaysLogWritter : Ilogger
         {
-            public Pathfinder(int variantOfLogger) : base(variantOfLogger) {}
-           
+            private Ilogger _securedLogger;
+            private Ilogger _unSecuredLogger;
+
+          public DifferentWaysLogWritter(Ilogger unSecuredLogger, Ilogger securedLogger)
+            {
+                _securedLogger = securedLogger;
+                _unSecuredLogger = unSecuredLogger;
+            }
+
+            public void DifferentWaysWrite( string message)
+            {
+                _unSecuredLogger.WriteError(message);
+
+                if (DateTime.Now.DayOfWeek == DayOfWeek.Friday)
+                    _securedLogger.WriteError(message);
+            }
+        }
+
+        class Pathfinder 
+        {
+            private Ilogger _logger;
+
+            public Pathfinder(Ilogger logger)
+            {
+                _logger = logger;
+            }
+
             public void Find(string message)
             {
-                ChooseLoggerToWrite(message);
+                _logger.WriteError(message);
             }
         }
 
-        class Logger
+        public interface Ilogger
         {
-            private int _variantOfLogger;
-            private ConsoleLogWritter _consoleLogWritter = new ConsoleLogWritter();
-            private FileLogWritter _fileLogWritter = new FileLogWritter();
-            private SecureLogWritter _secureLogWritter = new SecureLogWritter();
-
-            public Logger(int variantOfLogger)
-            {
-                _variantOfLogger = variantOfLogger;
-            }
-
-            protected void ChooseLoggerToWrite(string message)
-            {
-                switch (_variantOfLogger)
-                {
-                    case 1:
-                        _fileLogWritter.WriteError(message);
-                        break;
-                    case 2:
-                        _consoleLogWritter.WriteError(message);
-                        break;
-                    case 3:
-                        _secureLogWritter.SecuredWrite(_fileLogWritter,message);
-                        break;
-                    case 4:
-                        _secureLogWritter.SecuredWrite(_consoleLogWritter, message);
-                        break;
-                    case 5:
-                        _consoleLogWritter.WriteError(message);
-                        _secureLogWritter.SecuredWrite(_fileLogWritter, message);
-                        break;
-                }
-            }
+            public void WriteError(string message) { }
         }
     }
 }

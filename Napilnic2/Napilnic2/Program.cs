@@ -6,55 +6,159 @@ namespace Napilnik1
     {
         static void Main(string[] args)
         {
-            //Выведите платёжные ссылки для трёх разных систем платежа: 
-            //pay.system1.ru/order?amount=12000RUB&hash={MD5 хеш ID заказа}
-            //order.system2.ru/pay?hash={MD5 хеш ID заказа + сумма заказа}
-            //system3.com/pay?amount=12000&curency=RUB&hash={SHA-1 хеш сумма заказа + ID заказа + секретный ключ от системы}
+            Good iPhone12 = new Good("IPhone 12");
+            Good iPhone11 = new Good("IPhone 11");
 
-            Order order = new Order(333, 10);
-            Mir mir = new Mir();
-            Visa visa = new Visa();
-            MasterCard mastercard = new MasterCard();
+            Warehouse warehouse = new Warehouse();
 
-            Console.WriteLine(mir.GetPayingLink(order));
-            Console.WriteLine(visa.GetPayingLink(order));
-            Console.WriteLine(mastercard.GetPayingLink(order));
+            Shop shop = new Shop(warehouse);
+
+            warehouse.Delive(iPhone12, 10);
+            warehouse.Delive(iPhone11, 1);
+
+            //Вывод всех товаров на складе с их остатком
+            warehouse.ShowGoods();
+
+            Cart cart = shop.Cart();
+            cart.Add(iPhone12, 4);
+            cart.Add(iPhone11, 3); //при такой ситуации возникает ошибка так, как нет нужного количества товара на складе
+
+            //Вывод всех товаров в корзине
+            cart.ShowGoods();
+
+            Console.WriteLine(cart.Order().Paylink);
+
+            cart.Add(iPhone12, 9); //Ошибка, после заказа со склада убираются заказанные товары
         }
-    }
 
-    public class Order
-    {
-        public readonly int Id;
-        public readonly int Amount;
+        class Good
+        {
+            public string Title { get; private set; }
 
-        public Order(int id, int amount) => (Id, Amount) = (id, amount);
-    }
+            public Good(string title)
+            {
+                Title = title;
+            }
+        }
 
-    public interface IPaymentSystem
-    {
-        public string Link { get; }
-        public string GetPayingLink(Order order);
-        
-    }
+        class Warehouse
+        {
+            private Dictionary<Good, int> _goods; 
 
-    public class Mir : IPaymentSystem
-    {
-        public string Link => "pay.system1.ru/order?amount=12000RUB&hash={MD5 хеш ID заказа}";
+            public Warehouse()
+            {
+                _goods = new Dictionary<Good, int>();
+            }
 
-        public string GetPayingLink(Order order) => $"ID заказа - {order.Id}, колличество - {order.Amount}, сслыка - {Link}";
-    }
+            public void Delive(Good good, int count)
+            {
+                if (count > 0 || good != null)
+                {
+                    if (_goods.ContainsKey(good))
+                        _goods[good] += count;
+                    else
+                        _goods.Add(good, count);
+                }
+            }
 
-    public class Visa : IPaymentSystem
-    {
-        public string Link => "order.system2.ru/pay?hash={MD5 хеш ID заказа + сумма заказа}";
+            public void RemoveGoods(Good good, int count)
+            {
+                if (_goods.ContainsKey(good))
+                {
+                    if (_goods[good] - count == 0)
+                        _goods.Remove(good);
+                    else
+                        _goods[good] -= count;
+                }
+                else
+                    throw new Exception();
+            }
 
-        public string GetPayingLink(Order order) => $"ID заказа - {order.Id}, колличество - {order.Amount}, сслыка - {Link}";
-    }
+            public void ShowGoods()
+            {
+                foreach (var good in _goods)
+                {
+                    Console.WriteLine($"{good.Key.Title} колличество - {good.Value}");
+                }
+            }
 
-    public class MasterCard : IPaymentSystem
-    {
-        public string Link => "system3.com/pay?amount=12000&curency=RUB&hash={SHA-1 хеш сумма заказа + ID заказа + секретный ключ от системы}";
+            public bool TryToSendGood(Good goodToSend)
+            {
+                if (_goods.ContainsKey(goodToSend))
+                {
+                    return true;
+                }
+                return false;
+            }
 
-        public string GetPayingLink(Order order) => $"ID заказа - {order.Id}, колличество - {order.Amount}, сслыка - {Link}";   
+            public bool VerifyСount(Good good, int count)
+            {
+                if (_goods[good] >= count)
+                {
+                    return true;
+                }
+                return false;
+            }
+        }
+
+        class Shop
+        {
+            private Warehouse _warehouse;
+
+            public string Paylink = "Оплата";
+
+            public Shop(Warehouse warehouse)
+            {
+                _warehouse = warehouse;
+            }
+
+            public Cart Cart() => new Cart(this);
+
+            public bool TryToTakeGood(Good goodToSend) => _warehouse.TryToSendGood(goodToSend);
+
+            public bool VerifyСountInWarehouse(Good good, int count) => _warehouse.VerifyСount(good, count);
+
+            public void RemoveGoodFromWarehouse(Good good, int count)
+            {
+                _warehouse.RemoveGoods(good, count);
+            }
+        }
+
+        class Cart
+        {
+            private Dictionary<Good, int> _goods;
+
+            public Shop Shop { get; private set; }
+
+            public Cart(Shop shop)
+            {
+                Shop = shop;
+                _goods = new Dictionary<Good, int>();
+            }
+
+            public Shop Order() => Shop;
+
+            public void ShowGoods()
+            {
+                foreach (var good in _goods)
+                    Console.WriteLine($"Товары в корзине: {good.Key.Title} колличество -  {good.Value}");
+            }
+
+            public void Add(Good goodToAdd, int count)
+            {
+                if (Shop.TryToTakeGood(goodToAdd))
+                {
+                    if (Shop.VerifyСountInWarehouse(goodToAdd, count))
+                    {
+                        Shop.RemoveGoodFromWarehouse(goodToAdd, count);
+                        _goods.Add(goodToAdd, count);
+                    }
+                    else
+                        throw new ArgumentOutOfRangeException();
+                }
+                else
+                    throw new ArgumentOutOfRangeException();
+            }
+        }
     }
 }

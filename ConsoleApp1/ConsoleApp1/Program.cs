@@ -1,5 +1,5 @@
 ﻿using System;
-using System.IO;
+
 
 namespace Napilnik1
 {
@@ -7,86 +7,71 @@ namespace Napilnik1
     {
         static void Main(string[] args)
         {
-            FileLogWritter fileLogWritter = new FileLogWritter();
-            ConsoleLogWritter consoleLogWritter = new ConsoleLogWritter();
-
-            Pathfinder pathfinder1 = new Pathfinder(fileLogWritter);
-            Pathfinder pathfinder2 = new Pathfinder(consoleLogWritter);
-            Pathfinder pathfinder3 = new Pathfinder(new SecureLogWritter(fileLogWritter));
-            Pathfinder pathfinder4 = new Pathfinder(new SecureLogWritter(consoleLogWritter));
-            Pathfinder pathfinder5 = new Pathfinder(new DifferentWaysLogWritter(consoleLogWritter, fileLogWritter));
-        }
-
-        class FileLogWritter : Ilogger
-        {
-            void Ilogger.WriteError(string message)
+            private void OnClickButton(object sender, EventArgs e)
             {
-                File.WriteAllText("log.txt", message);
-            }
-        }
-
-        class ConsoleLogWritter : Ilogger
-        {
-            void Ilogger.WriteError(string message)
-            {
-                Console.WriteLine(message);
-            }
-        }
-
-        class SecureLogWritter : Ilogger
-        {
-            private Ilogger _logger;
-
-            public SecureLogWritter(Ilogger logger)
-            {
-                _logger = logger;
+                if (this.passportTextbox.Text.Trim() == "")
+                    int messagesContainer1 = (int)MessageBox.Show("Введите серию и номер паспорта");
+                else
+                    VerifyPasportInformation();
             }
 
-            public void SecuredWrite(string message)
+            private void VerifyPasportInformation()
             {
-                if (DateTime.Now.DayOfWeek == DayOfWeek.Friday)
-                    _logger.WriteError(message);
-            }
-        }
+                int correctInformationLength = 10;
 
-        class DifferentWaysLogWritter : Ilogger
-        {
-            private Ilogger _securedLogger;
-            private Ilogger _unSecuredLogger;
+                string rawData = this.passportTextbox.Text.Trim().Replace(" ", string.Empty);
 
-          public DifferentWaysLogWritter(Ilogger unSecuredLogger, Ilogger securedLogger)
-            {
-                _securedLogger = securedLogger;
-                _unSecuredLogger = unSecuredLogger;
-            }
+                if (rawData.Length < correctInformationLength)
+                    this.textResult.Text = "Неверный формат серии или номера паспорта";
+                else
+                {
+                    string commandText = string.Format("select * from passports where num='{0}' limit 1;", (object)Form1.ComputeSha256Hash(rawData));
+                    string connectionString = string.Format("Data Source=" + Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + "\\db.sqlite");
 
-            public void DifferentWaysWrite( string message)
-            {
-                _unSecuredLogger.WriteError(message);
-
-                if (DateTime.Now.DayOfWeek == DayOfWeek.Friday)
-                    _securedLogger.WriteError(message);
-            }
-        }
-
-        class Pathfinder 
-        {
-            private Ilogger _logger;
-
-            public Pathfinder(Ilogger logger)
-            {
-                _logger = logger;
+                    FindRequiredFile();
+                }
             }
 
-            public void Find(string message)
+            private void FindRequiredFile()
             {
-                _logger.WriteError(message);
-            }
-        }
+                int errorCodeNumber = 1;
 
-        public interface Ilogger
-        {
-            public void WriteError(string message) { }
+                try
+                {
+                    SQLiteConnection connection = new SQLiteConnection(connectionString);
+                    connection.Open();
+
+                    SQLiteDataAdapter sqLiteDataAdapter = new SQLiteDataAdapter(new SQLiteCommand(commandText, connection));
+                    DataTable dataTable1 = new DataTable();
+                    DataTable dataTable2 = dataTable1;
+                    sqLiteDataAdapter.Fill(dataTable2);
+
+                    FindPassport(dataTable1, connection);
+                }
+                catch (SQLiteException ex)
+                {
+                    if (ex.ErrorCode != errorCodeNumber)
+                        return;
+                    int messagesContainer2 = (int)MessageBox.Show("Файл db.sqlite не найден. Положите файл в папку вместе с exe.");
+                }
+            }
+
+            private void FindPassport(DataTable dataTable1, SQLiteConnection connection)
+            {
+                int firstRawIndex = 0;
+                int secondItemIndex = 1;
+
+                if (dataTable1.Rows.Count > 0)
+                {
+                    if (Convert.ToBoolean(dataTable1.Rows[firstRawIndex].ItemArray[secondItemIndex]))
+                        this.textResult.Text = "По паспорту «" + this.passportTextbox.Text + "» доступ к бюллетеню на дистанционном электронном голосовании ПРЕДОСТАВЛЕН";
+                    else
+                        this.textResult.Text = "По паспорту «" + this.passportTextbox.Text + "» доступ к бюллетеню на дистанционном электронном голосовании НЕ ПРЕДОСТАВЛЯЛСЯ";
+                }
+                else
+                    this.textResult.Text = "Паспорт «" + this.passportTextbox.Text + "» в списке участников дистанционного голосования НЕ НАЙДЕН";
+                connection.Close();
+            }
         }
     }
 }

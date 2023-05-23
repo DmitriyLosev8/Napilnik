@@ -6,159 +6,140 @@ namespace Napilnik1
     {
         static void Main(string[] args)
         {
-            Good iPhone12 = new Good("IPhone 12");
-            Good iPhone11 = new Good("IPhone 11");
+            OrderForm orderForm = new OrderForm();
+            PaymentHandler paymentHandler = new PaymentHandler();
 
-            Warehouse warehouse = new Warehouse();
+            string enteredSystemId = orderForm.ShowForm();
 
-            Shop shop = new Shop(warehouse);
-
-            warehouse.Delive(iPhone12, 10);
-            warehouse.Delive(iPhone11, 1);
-
-            //Вывод всех товаров на складе с их остатком
-            warehouse.ShowGoods();
-
-            Cart cart = shop.Cart();
-            cart.Add(iPhone12, 4);
-            cart.Add(iPhone11, 3); //при такой ситуации возникает ошибка так, как нет нужного количества товара на складе
-
-            //Вывод всех товаров в корзине
-            cart.ShowGoods();
-
-            Console.WriteLine(cart.Order().Paylink);
-
-            cart.Add(iPhone12, 9); //Ошибка, после заказа со склада убираются заказанные товары
-        }
-
-        class Good
-        {
-            public string Title { get; private set; }
-
-            public Good(string title)
-            {
-                Title = title;
-            }
-        }
-
-        class Warehouse
-        {
-            private Dictionary<Good, int> _goods; 
-
-            public Warehouse()
-            {
-                _goods = new Dictionary<Good, int>();
-            }
-
-            public void Delive(Good good, int count)
-            {
-                if (count > 0 || good != null)
-                {
-                    if (_goods.ContainsKey(good))
-                        _goods[good] += count;
-                    else
-                        _goods.Add(good, count);
-                }
-            }
-
-            public void RemoveGoods(Good good, int count)
-            {
-                if (_goods.ContainsKey(good))
-                {
-                    if (_goods[good] - count == 0)
-                        _goods.Remove(good);
-                    else
-                        _goods[good] -= count;
-                }
-                else
-                    throw new Exception();
-            }
-
-            public void ShowGoods()
-            {
-                foreach (var good in _goods)
-                {
-                    Console.WriteLine($"{good.Key.Title} колличество - {good.Value}");
-                }
-            }
-
-            public bool TryToSendGood(Good goodToSend)
-            {
-                if (_goods.ContainsKey(goodToSend))
-                {
-                    return true;
-                }
-                return false;
-            }
-
-            public bool VerifyСount(Good good, int count)
-            {
-                if (_goods[good] >= count)
-                {
-                    return true;
-                }
-                return false;
-            }
-        }
-
-        class Shop
-        {
-            private Warehouse _warehouse;
-
-            public string Paylink = "Оплата";
-
-            public Shop(Warehouse warehouse)
-            {
-                _warehouse = warehouse;
-            }
-
-            public Cart Cart() => new Cart(this);
-
-            public bool TryToTakeGood(Good goodToSend) => _warehouse.TryToSendGood(goodToSend);
-
-            public bool VerifyСountInWarehouse(Good good, int count) => _warehouse.VerifyСount(good, count);
-
-            public void RemoveGoodFromWarehouse(Good good, int count)
-            {
-                _warehouse.RemoveGoods(good, count);
-            }
-        }
-
-        class Cart
-        {
-            private Dictionary<Good, int> _goods;
-
-            public Shop Shop { get; private set; }
-
-            public Cart(Shop shop)
-            {
-                Shop = shop;
-                _goods = new Dictionary<Good, int>();
-            }
-
-            public Shop Order() => Shop;
-
-            public void ShowGoods()
-            {
-                foreach (var good in _goods)
-                    Console.WriteLine($"Товары в корзине: {good.Key.Title} колличество -  {good.Value}");
-            }
-
-            public void Add(Good goodToAdd, int count)
-            {
-                if (Shop.TryToTakeGood(goodToAdd))
-                {
-                    if (Shop.VerifyСountInWarehouse(goodToAdd, count))
-                    {
-                        Shop.RemoveGoodFromWarehouse(goodToAdd, count);
-                        _goods.Add(goodToAdd, count);
-                    }
-                    else
-                        throw new ArgumentOutOfRangeException();
-                }
-                else
-                    throw new ArgumentOutOfRangeException();
-            }
+            paymentHandler.TryToChoosePaymentSystem(enteredSystemId);
         }
     }
+
+    public class OrderForm
+    {
+        public string ShowForm()
+        {
+            Console.WriteLine("Мы принимаем: QIWI, WebMoney, Card");
+
+            //симуляция веб интерфейса
+            Console.WriteLine("Какое системой вы хотите совершить оплату?");
+            return Console.ReadLine();
+        }
+    }
+
+    public class PaymentHandler
+    {
+        private List<IpaymentSystem> _paymentSystems;
+        private QIWI _qiwi = new QIWI();
+        private WebMoney _webMoney = new WebMoney();
+        private Card _card = new Card();
+
+        public PaymentHandler()
+        {
+            _paymentSystems = new List<IpaymentSystem>();
+            _paymentSystems.Add(_qiwi);
+            _paymentSystems.Add(_webMoney);
+            _paymentSystems.Add(_card);
+        }
+        
+        public void TryToChoosePaymentSystem(string enteredSystemId)
+        {
+            foreach (var paymentSystem in _paymentSystems)
+            {
+                if (paymentSystem.Id == enteredSystemId)
+                {
+                    paymentSystem.ConnectToSystem();
+                    TryToMaketPayment(paymentSystem);
+                }
+            }
+        }
+
+        public void TryToMaketPayment(IpaymentSystem paymentSystem)
+        {
+            Console.WriteLine($"Вы оплатили с помощью {paymentSystem.Id}");
+
+            paymentSystem.MakePayment();
+        }
+    }
+
+    public interface IpaymentSystem
+    {
+        public string Id { get; }
+
+        public void MakePayment();
+        public void ConnectToSystem();
+        public void DetermineResult();
+    }
+
+    public class QIWI : IpaymentSystem
+    {
+        public string Id => "QIWI";
+
+        void IpaymentSystem.MakePayment()
+        {
+            Console.WriteLine("Проверка платежа через QIWI...");
+            DetermineResult();
+        }
+
+        void IpaymentSystem.ConnectToSystem()
+        {
+            Console.WriteLine("Перевод на страницу QIWI...");
+        }
+
+        public void DetermineResult()
+        {
+            if (true)  //проверка
+                Console.WriteLine("Оплата прошла успешно!");
+            else
+                Console.WriteLine("Оплата не прошла");
+        }
+    }
+
+    public class WebMoney : IpaymentSystem
+    {
+        public string Id => "WebMoney";
+
+        void IpaymentSystem.MakePayment()
+        {
+            Console.WriteLine("Проверка платежа через WebMoney...");
+            DetermineResult();
+        }
+
+        void IpaymentSystem.ConnectToSystem()
+        {
+            Console.WriteLine("Вызов API WebMoney...");
+        }
+
+        public void DetermineResult()
+        {
+            if (true)  //проверка
+                Console.WriteLine("Оплата прошла успешно!");
+            else
+                Console.WriteLine("Проверка не прошла");
+        }
+    }
+
+    public class Card : IpaymentSystem
+    {
+        public string Id => "Card";
+
+        void IpaymentSystem.MakePayment()
+        {
+            Console.WriteLine("Проверка платежа через Card...");
+            DetermineResult();
+        }
+
+        void IpaymentSystem.ConnectToSystem()
+        {
+            Console.WriteLine("Вызов API банка эмитера карты Card...");
+        }
+
+        public void DetermineResult()
+        {
+            if (true)  //проверка
+                Console.WriteLine("Оплата прошла успешно!");
+            else
+                Console.WriteLine("Оплата не прошла");
+        }
+    } 
 }

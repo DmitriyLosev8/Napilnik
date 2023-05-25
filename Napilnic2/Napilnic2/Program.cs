@@ -8,10 +8,11 @@ namespace Napilnik1
         {
             OrderForm orderForm = new OrderForm();
             PaymentHandler paymentHandler = new PaymentHandler();
+            PaymentSystemSelector paymentSystemSelector = new PaymentSystemSelector(paymentHandler);
 
             string enteredSystemId = orderForm.ShowForm();
 
-            paymentHandler.TryToChoosePaymentSystem(enteredSystemId);
+            paymentSystemSelector.SelectPaymentSystem(enteredSystemId);
         }
     }
 
@@ -27,39 +28,46 @@ namespace Napilnik1
         }
     }
 
-    public class PaymentHandler
+    public class PaymentSystemSelector
     {
         private List<IpaymentSystem> _paymentSystems;
         private QIWI _qiwi = new QIWI();
         private WebMoney _webMoney = new WebMoney();
         private Card _card = new Card();
+        private PaymentHandler _paymentHandler;
 
-        public PaymentHandler()
+        public PaymentSystemSelector(PaymentHandler paymentHandler)
         {
             _paymentSystems = new List<IpaymentSystem>();
             _paymentSystems.Add(_qiwi);
             _paymentSystems.Add(_webMoney);
             _paymentSystems.Add(_card);
+            _paymentHandler = paymentHandler;
         }
-        
-        public void TryToChoosePaymentSystem(string enteredSystemId)
+
+        public void SelectPaymentSystem(string enteredSystemId)
         {
             foreach (var paymentSystem in _paymentSystems)
             {
                 if (paymentSystem.Id == enteredSystemId)
                 {
                     paymentSystem.ConnectToSystem();
-                    TryToMaketPayment(paymentSystem);
+
+                    _paymentHandler.TryToMaketPayment(paymentSystem);
                 }
             }
         }
+    }
 
+    public class PaymentHandler
+    {    
         public void TryToMaketPayment(IpaymentSystem paymentSystem)
         {
             Console.WriteLine($"Вы оплатили с помощью {paymentSystem.Id}");
 
             paymentSystem.MakePayment();
         }
+
     }
 
     public interface IpaymentSystem
